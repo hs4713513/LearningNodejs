@@ -1,14 +1,19 @@
 
 const Task=require('../models/task')
-const getalltasks= async (req,res)=>{
-    try{
+const asyncWrapper=require('../middleware/async')
+//using wrapper....in getalltasks
+const getalltasks= asyncWrapper(async (req,res,next)=>{
+   
     const task=await Task.find({})
-    res.status(201).json({task})
+    if(!task)
+    {
+        const error=new Error("not found");
+        error.status=404
+        return next(err)
     }
-    catch(err){
-    res.send(`cannot retrieve all documents ${err}`)
-    }
-}
+    res.status(201).json({status:"succes",data:{task,nbHits:task.lenght}})  
+    
+})
 const createtask= async (req,res)=>{
     try{
     const task=await Task.create(req.body)
@@ -62,6 +67,21 @@ const deletetask=async (req,res)=>{
     }
     
 }
+const edittask=async (req,res)=>{
+    try{
+        const {id:taskid}=req.params
+        const task=await Task.findOneAndUpdate({_id:taskid},req.body,{new:true,runValidators:true})
+        if(!task)
+        {
+            res.send("not found")
+        }
+        res.status(200).json({task})
+    }
+    catch(err)
+    {
+        res.send(err)
+    }
+}
     
 
 module.exports={
@@ -69,5 +89,6 @@ module.exports={
     createtask,
     gettask,
     updatetask,
-    deletetask
+    deletetask,
+    edittask
 }
